@@ -22,6 +22,7 @@ return new class extends Migration
 
             $table->index(['form_id','submitted_at']);
             $table->index(['form_id','participant_id','submitted_at']);
+            $table->unique(['form_id','participant_id'],'snapshots_unique_form_participant');
         });
     }
 

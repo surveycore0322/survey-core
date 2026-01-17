@@ -61,12 +61,17 @@ final class SubmitSnapshotUseCase
             $qid = (int)$a['question_id'];
 
             if (isset($seen[$qid])) {
-                throw new UseCaseException('DUPLICATE_QUESTION_IN_SUBMISSION', 'Duplicate question in submission.', ['question_id' => $qid], 400);
+                throw new UseCaseException(
+                    'SC_SNAPSHOT_DUPLICATE_QUESTION_IN_SUBMISSION',
+                    'Duplicate question in submission.',
+                    ['question_id' => $qid],
+                    422
+                );
             }
             $seen[$qid] = true;
 
             if (!in_array($qid, $knownIds, true)) {
-                throw new UseCaseException('QUESTION_NOT_FOUND', 'Question not found in form.', ['question_id' => $qid], 400);
+                throw new UseCaseException('QUESTION_NOT_FOUND', 'Question not found in form.', ['question_id' => $qid], 422);
             }
         }
         foreach ($requiredIds as $rid) {
