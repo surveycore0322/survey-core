@@ -12,7 +12,6 @@ use App\UseCases\Assemblers\TokenAssembler;
 use App\UseCases\DTO\SubmitSnapshotInput;
 use App\UseCases\DTO\SubmitSnapshotOutput;
 use App\UseCases\Exceptions\UseCaseException;
-use App\Services\Scalarizer\ScalarizerInterface;
 use Carbon\CarbonImmutable;
 
 final class SubmitSnapshotUseCase
@@ -24,7 +23,6 @@ final class SubmitSnapshotUseCase
         private SnapshotRepositoryInterface $snapshotRepo,
         private TokenAssembler $tokenAssembler,
         private SnapshotAssembler $snapshotAssembler,
-        private ScalarizerInterface $scalarizer,
     ) {}
 
     public function execute(SubmitSnapshotInput $in): SubmitSnapshotOutput
@@ -40,16 +38,11 @@ final class SubmitSnapshotUseCase
 
         // 2) 質問index（id/type/required）
         $questionIndex = $this->formRepo->getQuestionIndexByFormId($formId);
-        // 例: [['id'=>1,'type'=>'boolean','required'=>true], ...]
-
-        $knownQuestionIds = [];
+        $knownIds = [];
         $requiredIds = [];
-        $qTypeMap = []; // question_id => type
-
         foreach ($questionIndex as $q) {
             $qid = (int)$q['id'];
-            $knownQuestionIds[] = $qid;
-            $qTypeMap[$qid] = (string)$q['type'];
+            $knownIds[] = $qid;
             if ((bool)$q['required']) $requiredIds[] = $qid;
         }
 
