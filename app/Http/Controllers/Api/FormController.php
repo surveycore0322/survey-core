@@ -36,85 +36,72 @@ final class FormController extends Controller
      */
     public function create(CreateFormRequest $request): JsonResponse
     {
-        try {
-            $qs = null;
-            if (is_array($request->input('questions'))) {
-                $qs = array_map(function (array $q, int $i) {
-                    return new CreateQuestionInput(
-                        label: $q['label'],
-                        type: $q['type'],
-                        required: (bool)($q['required'] ?? false),
-                        sortOrder: (int)($q['sort_order'] ?? $i),
-                        options: $q['options'] ?? null,
-                    );
-                }, $request->input('questions'), array_keys($request->input('questions')));
-            }
-
-            $dto = new CreateFormInput(
-                organizerNickname: $request->string('organizer_nickname')->toString(),
-                title: $request->string('title')->toString(),
-                type: $request->string('type')->toString(),
-                eventDate: $request->input('event_date'),
-                questions: $qs,
-            );
-
-            $out = $this->createForm->execute($dto);
-
-            return (new CreateFormResponseResource($out))
-                ->response()
-                ->setStatusCode(201);
-
-        } catch (UseCaseException $e) {
-            return $this->useCaseError($e);
+        $qs = null;
+        if (is_array($request->input('questions'))) {
+            $qs = array_map(function (array $q, int $i) {
+                return new CreateQuestionInput(
+                    label: $q['label'],
+                    type: $q['type'],
+                    required: (bool)($q['required'] ?? false),
+                    sortOrder: (int)($q['sort_order'] ?? $i),
+                    options: $q['options'] ?? null,
+                );
+            }, $request->input('questions'), array_keys($request->input('questions')));
         }
+
+        $dto = new CreateFormInput(
+            organizerNickname: $request->string('organizer_nickname')->toString(),
+            title: $request->string('title')->toString(),
+            type: $request->string('type')->toString(),
+            eventDate: $request->input('event_date'),
+            questions: $qs,
+        );
+
+        $out = $this->createForm->execute($dto);
+
+        return (new CreateFormResponseResource($out))
+            ->response()
+            ->setStatusCode(201);
     }
+
 
     /**
      * GET /api/v1/forms/{public_token}
      */
-		public function show(string $public_token): JsonResponse
-		{
-		    try {
-		        $out = $this->getFormDetail->execute(new GetFormDetailInput($public_token));
+    public function show(string $public_token): JsonResponse
+    {
+        $out = $this->getFormDetail->execute(new GetFormDetailInput($public_token));
 
-		        return response()->json([
-		            'form' => new FormResource($out->form),
-		        ]);
+        return response()->json([
+            'form' => new FormResource($out->form),
+        ]);
 
-		    } catch (UseCaseException $e) {
-		        return $this->useCaseError($e, 404);
-		    }
-		}
+    }
 
     /**
      * POST /api/v1/forms/{public_token}/snapshots
      */
     public function submitSnapshot(SubmitSnapshotRequest $request, string $public_token): JsonResponse
     {
-        try {
-            $answers = array_map(function (array $a) {
-                return new AnswerInput(
-                    questionId: (int)$a['question_id'],
-                    value: $a['value'] ?? null
-                );
-            }, $request->input('answers'));
-
-            $dto = new SubmitSnapshotInput(
-                publicToken: $public_token,
-                nickname: $request->string('nickname')->toString(),
-                participantToken: $request->input('participant_token'),
-                answers: $answers,
+        $answers = array_map(function (array $a) {
+            return new AnswerInput(
+                questionId: (int)$a['question_id'],
+                value: $a['value'] ?? null
             );
+        }, $request->input('answers'));
 
-            $out = $this->submitSnapshot->execute($dto);
+        $dto = new SubmitSnapshotInput(
+            publicToken: $public_token,
+            nickname: $request->string('nickname')->toString(),
+            participantToken: $request->input('participant_token'),
+            answers: $answers,
+        );
 
-            return (new SubmitSnapshotResponseResource($out))
-                ->response()
-                ->setStatusCode(201);
+        $out = $this->submitSnapshot->execute($dto);
 
-        } catch (UseCaseException $e) {
-            return $this->useCaseError($e);
-        }
+        return (new SubmitSnapshotResponseResource($out))
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
@@ -122,31 +109,11 @@ final class FormController extends Controller
      */
     public function results(string $public_token): JsonResponse
     {
-        try {
-            $out = $this->getFormResult->execute(new GetFormResultInput(publicToken: $public_token));
+        $out = $this->getFormResult->execute(new GetFormResultInput(publicToken: $public_token));
 
-            return (new FormResultResource($out))
-                ->response()
-                ->setStatusCode(200);
+        return (new FormResultResource($out))
+            ->response()
+            ->setStatusCode(200);
 
-        } catch (UseCaseException $e) {
-            return $this->useCaseError($e, 404);
-        }
-    }
-
-    private function useCaseError(UseCaseException $e, int $fallbackStatus = 400): JsonResponse
-    {
-        $status = $e->getCode();
-        if (!is_int($status) || $status < 400 || $status > 599) {
-            $status = $fallbackStatus;
-        }
-
-        return response()->json([
-            'error' => [
-                'code' => $e->codeKey,
-                'message' => $e->getMessage(),
-                'detail' => $e->detail,
-            ],
-        ], $status);
     }
 }
