@@ -17,7 +17,7 @@ class Answer extends Model
     ];
 
     protected $casts = [
-        'value' => ValueCaster::class,   // ← ここが重要
+        'value' => ValueCaster::class,
     ];
 
     public function snapshot(): BelongsTo
